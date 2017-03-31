@@ -38,6 +38,12 @@ config phase3.weave_net
 	default n
 	help
 	  Should we deploy weave-net? You likely only want this if using kubeadm for phase2.
+
+config phase3.calico
+	bool "Run Calico?"
+	default n
+	help
+	  Should we deploy calico? You likely only want this if using kubeadm for phase2.
 endif
 
 endmenu

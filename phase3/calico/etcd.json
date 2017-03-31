@@ -1,0 +1,72 @@
+{
+    "apiVersion": "extensions/v1beta1",
+    "kind": "DaemonSet",
+    "metadata": {
+        "name": "calico-etcd",
+        "namespace": "kube-system",
+        "labels": {
+            "k8s-app": "calico-etcd"
+        }
+    },
+    "spec": {
+        "template": {
+            "metadata": {
+                "labels": {
+                    "k8s-app": "calico-etcd"
+                },
+                "annotations": {
+                    "scheduler.alpha.kubernetes.io/critical-pod": ""
+                }
+            },
+            "spec": {
+                "tolerations": [
+                    {
+                        "key": "node-role.kubernetes.io/master",
+                        "effect": "NoSchedule"
+                    }
+                ],
+                "nodeSelector": {
+                    "node-role.kubernetes.io/master": ""
+                },
+                "hostNetwork": true,
+                "containers": [
+                    {
+                        "name": "calico-etcd",
+                        "image": "gcr.io/google_containers/etcd:2.2.1",
+                        "env": [
+                            {
+                                "name": "CALICO_ETCD_IP",
+                                "valueFrom": {
+                                    "fieldRef": {
+                                        "fieldPath": "status.podIP"
+                                    }
+                                }
+                            }
+                        ],
+                        "command": [
+                            "/bin/sh",
+                            "-c"
+                        ],
+                        "args": [
+                            "/usr/local/bin/etcd --name=calico --data-dir=/var/etcd/calico-data --advertise-client-urls=http://$CALICO_ETCD_IP:6666 --listen-client-urls=http://0.0.0.0:6666 --listen-peer-urls=http://0.0.0.0:6667"
+                        ],
+                        "volumeMounts": [
+                            {
+                                "name": "var-etcd",
+                                "mountPath": "/var/etcd"
+                            }
+                        ]
+                    }
+                ],
+                "volumes": [
+                    {
+                        "name": "var-etcd",
+                        "hostPath": {
+                            "path": "/var/etcd"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

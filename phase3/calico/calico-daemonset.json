@@ -1,0 +1,151 @@
+{
+    "kind": "DaemonSet",
+    "apiVersion": "extensions/v1beta1",
+    "metadata": {
+        "name": "calico-node",
+        "namespace": "kube-system",
+        "labels": {
+            "k8s-app": "calico-node"
+        }
+    },
+    "spec": {
+        "selector": {
+            "matchLabels": {
+                "k8s-app": "calico-node"
+            }
+        },
+        "template": {
+            "metadata": {
+                "labels": {
+                    "k8s-app": "calico-node"
+                },
+                "annotations": {
+                    "scheduler.alpha.kubernetes.io/critical-pod": ""
+                }
+            },
+            "spec": {
+                "hostNetwork": true,
+                "tolerations": [
+                    {
+                        "key": "node-role.kubernetes.io/master",
+                        "effect": "NoSchedule"
+                    }
+                ],
+                "serviceAccountName": "calico-cni-plugin",
+                "containers": [
+                    {
+                        "name": "calico-node",
+                        "image": "quay.io/calico/node:v1.1.0",
+                        "env": [
+                            {
+                                "name": "ETCD_ENDPOINTS",
+                                "value": "http://10.96.232.136:6666"
+                            },
+                            {
+                                "name": "CALICO_NETWORKING_BACKEND",
+		"value": "bird"
+                            },
+                            {
+                                "name": "CALICO_DISABLE_FILE_LOGGING",
+                                "value": "true"
+                            },
+                            {
+                                "name": "FELIX_DEFAULTENDPOINTTOHOSTACTION",
+                                "value": "ACCEPT"
+                            },
+                            {
+                                "name": "CALICO_IPV4POOL_CIDR",
+                                "value": "192.168.0.0/16"
+                            },
+                            {
+                                "name": "CALICO_IPV4POOL_IPIP",
+                                "value": "always"
+                            },
+                            {
+                                "name": "FELIX_IPV6SUPPORT",
+                                "value": "false"
+                            },
+                            {
+                                "name": "FELIX_LOGSEVERITYSCREEN",
+                                "value": "info"
+                            },
+                            {
+                                "name": "IP",
+                                "value": ""
+                            }
+                        ],
+                        "securityContext": {
+                            "privileged": true
+                        },
+                        "resources": {
+                            "requests": {
+                                "cpu": "250m"
+                            }
+                        },
+                        "volumeMounts": [
+                            {
+                                "mountPath": "/lib/modules",
+                                "name": "lib-modules",
+                                "readOnly": true
+                            },
+                            {
+                                "mountPath": "/var/run/calico",
+                                "name": "var-run-calico",
+                                "readOnly": false
+                            }
+                        ]
+                    },
+                    {
+                        "name": "install-cni",
+                        "image": "quay.io/calico/cni:v1.6.1",
+                        "command": [
+                            "/install-cni.sh"
+                        ],
+                        "env": [
+                            {
+                                "name": "ETCD_ENDPOINTS",
+		"value": "http://10.96.232.136:6666"
+                            },
+                        ],
+                        "volumeMounts": [
+                            {
+                                "mountPath": "/host/opt/cni/bin",
+                                "name": "cni-bin-dir"
+                            },
+                            {
+                                "mountPath": "/host/etc/cni/net.d",
+                                "name": "cni-net-dir"
+                            }
+                        ]
+                    }
+                ],
+                "volumes": [
+                    {
+                        "name": "lib-modules",
+                        "hostPath": {
+                            "path": "/lib/modules"
+                        }
+                    },
+                    {
+                        "name": "var-run-calico",
+                        "hostPath": {
+                            "path": "/var/run/calico"
+                        }
+                    },
+                    {
+                        "name": "cni-bin-dir",
+                        "hostPath": {
+                            "path": "/opt/cni/bin"
+                        }
+                    },
+                    {
+                        "name": "cni-net-dir",
+                        "hostPath": {
+                            "path": "/etc/cni/net.d"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
